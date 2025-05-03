@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Onchain Messenger</title>
+</head>
+<body>
+  <h1>Onchain Messenger (Testnet)</h1>
+
+  <button id="connectButton">Connect Wallet</button>
+
+  <div>
+    <textarea id="messageInput" rows="4" cols="50" placeholder="Write your message..."></textarea>
+  </div>
+
+  <button id="sendButton">Send Message</button>
+
+  <p id="status"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+  <script>
+    const CONTRACT_ADDRESS = "0xbF2B459a4F332a52347648C21cA42A46F505C050"; // Replace with your deployed contract address
+
+    const ABI = [
+      {
+        "inputs": [{"internalType": "string","name": "message","type": "string"}],
+        "name": "sendMessage",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ];
+
+    let provider, signer, contract;
+
+    document.getElementById("connectButton").onclick = async () => {
+      if (typeof window.ethereum !== "undefined") {
+        await ethereum.request({ method: "eth_requestAccounts" });
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+        document.getElementById("status").innerText = "Wallet connected.";
+      } else {
+        document.getElementById("status").innerText = "MetaMask not found!";
+      }
+    };
+
+    document.getElementById("sendButton").onclick = async () => {
+      const message = document.getElementById("messageInput").value;
+      if (!contract || !message) return;
+
+      try {
+        const tx = await contract.sendMessage(message);
+        document.getElementById("status").innerText = "Sending transaction...";
+        await tx.wait();
+        document.getElementById("status").innerText = "Message sent successfully!";
+      } catch (err) {
+        console.error(err);
+        document.getElementById("status").innerText = "Failed to send message.";
+      }
+    };
+  </script>
+</body>
+</html>
