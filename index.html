@@ -1,65 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Onchain Messenger</title>
+  <title>Onchain Message</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
 </head>
 <body>
-  <h1>Onchain Messenger (Testnet)</h1>
+  <h1>Send Onchain Message</h1>
+  <textarea id="message" placeholder="Type your message"></textarea><br><br>
+  <button id="sendBtn">Send Message</button>
 
-  <button id="connectButton">Connect Wallet</button>
-
-  <div>
-    <textarea id="messageInput" rows="4" cols="50" placeholder="Write your message..."></textarea>
-  </div>
-
-  <button id="sendButton">Send Message</button>
-
-  <p id="status"></p>
-
-  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
   <script>
-    const CONTRACT_ADDRESS = "0xbF2B459a4F332a52347648C21cA42A46F505C050"; // Replace with your deployed contract address
+    let web3;
+    let contract;
+    let userAccount;
 
-    const ABI = [
-      {
-        "inputs": [{"internalType": "string","name": "message","type": "string"}],
-        "name": "sendMessage",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      }
-    ];
+    const contractAddress = 'YOUR_CONTRACT_ADDRESS';
+    const abi = [ /* YOUR_ABI_HERE */ ];
 
-    let provider, signer, contract;
+    window.addEventListener('load', async () => {
+      if (window.ethereum) {
+        web3 = new Web3(window.ethereum);
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const accounts = await web3.eth.getAccounts();
+          userAccount = accounts[0];
 
-    document.getElementById("connectButton").onclick = async () => {
-      if (typeof window.ethereum !== "undefined") {
-        await ethereum.request({ method: "eth_requestAccounts" });
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        signer = provider.getSigner();
-        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-        document.getElementById("status").innerText = "Wallet connected.";
+          contract = new web3.eth.Contract(abi, contractAddress);
+
+          document.getElementById("sendBtn").addEventListener("click", async () => {
+            const message = document.getElementById("message").value;
+            if (!message) return alert("Please type a message.");
+            try {
+              await contract.methods.sendMessage(message).send({ from: userAccount });
+              alert("Message sent!");
+            } catch (err) {
+              console.error(err);
+              alert("Transaction failed.");
+            }
+          });
+
+        } catch (error) {
+          console.error("User denied account access", error);
+        }
       } else {
-        document.getElementById("status").innerText = "MetaMask not found!";
+        alert("Please install MetaMask!");
       }
-    };
-
-    document.getElementById("sendButton").onclick = async () => {
-      const message = document.getElementById("messageInput").value;
-      if (!contract || !message) return;
-
-      try {
-        const tx = await contract.sendMessage(message);
-        document.getElementById("status").innerText = "Sending transaction...";
-        await tx.wait();
-        document.getElementById("status").innerText = "Message sent successfully!";
-      } catch (err) {
-        console.error(err);
-        document.getElementById("status").innerText = "Failed to send message.";
-      }
-    };
+    });
   </script>
 </body>
 </html>
