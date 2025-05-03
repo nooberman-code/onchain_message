@@ -3,86 +3,101 @@
 <head>
   <title>Onchain Message</title>
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #account { margin: 10px 0; font-weight: bold; color: green; }
+    #message { width: 300px; padding: 5px; margin-right: 10px; }
+    #sendBtn { padding: 5px 10px; }
+  </style>
 </head>
 <body>
-  <h1>Send Onchain Message</h1>
-  <textarea id="message" placeholder="Type your message"></textarea><br><br>
+  <h1>Onchain Message Sender</h1>
+
+  <button id="connect">Connect Wallet</button>
+  <p id="account" style="display: none;"></p>
+
+  <input type="text" id="message" placeholder="Write your message">
   <button id="sendBtn">Send Message</button>
 
   <script>
+    const contractAddress = "0xbF2B459a4F332a52347648C21cA42A46F505C050";
+    const abi = [
+      {
+        "anonymous": false,
+        "inputs": [
+          { "indexed": true, "internalType": "address", "name": "sender", "type": "address" },
+          { "indexed": false, "internalType": "string", "name": "message", "type": "string" },
+          { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+        ],
+        "name": "MessageSent",
+        "type": "event"
+      },
+      {
+        "inputs": [
+          { "internalType": "string", "name": "message", "type": "string" }
+        ],
+        "name": "sendMessage",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ];
+
     let web3;
     let contract;
     let userAccount;
 
-    const contractAddress = '0xbF2B459a4F332a52347648C21cA42A46F505C050';
-    const abi = [ 
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "message",
-				"type": "string"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "timestamp",
-				"type": "uint256"
-			}
-		],
-		"name": "MessageSent",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "message",
-				"type": "string"
-			}
-		],
-		"name": "sendMessage",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	}
- ];
-
-    window.addEventListener('load', async () => {
+    async function connectWallet() {
       if (window.ethereum) {
-        web3 = new Web3(window.ethereum);
         try {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          web3 = new Web3(window.ethereum);
           const accounts = await web3.eth.getAccounts();
           userAccount = accounts[0];
-
           contract = new web3.eth.Contract(abi, contractAddress);
-
-          document.getElementById("sendBtn").addEventListener("click", async () => {
-            const message = document.getElementById("message").value;
-            if (!message) return alert("Please type a message.");
-            try {
-              await contract.methods.sendMessage(message).send({ from: userAccount });
-              alert("Message sent!");
-            } catch (err) {
-              console.error(err);
-              alert("Transaction failed.");
-            }
-          });
-
-        } catch (error) {
-          console.error("User denied account access", error);
+          showConnectedState();
+        } catch (err) {
+          console.error("Wallet connection error:", err);
         }
       } else {
         alert("Please install MetaMask!");
+      }
+    }
+
+    function showConnectedState() {
+      document.getElementById("connect").style.display = "none";
+      document.getElementById("account").innerText = "Connected as: " + userAccount;
+      document.getElementById("account").style.display = "block";
+    }
+
+    document.getElementById("connect").addEventListener("click", connectWallet);
+
+    document.getElementById("sendBtn").addEventListener("click", async () => {
+      const message = document.getElementById("message").value;
+      if (!message) return alert("Please type a message.");
+
+      if (!contract || !userAccount) return alert("Please connect your wallet first.");
+
+      try {
+        const tx = await contract.methods.sendMessage(message).send({ from: userAccount });
+        console.log("Transaction successful:", tx);
+        alert("Message sent successfully!");
+      } catch (err) {
+        console.error("Transaction failed:", err);
+        alert("Failed to send message. Check console.");
+      }
+    });
+
+    // Auto-connect if already authorized
+    window.addEventListener("load", async () => {
+      if (window.ethereum) {
+        const accounts = await window.ethereum.request({ method: "eth_accounts" });
+        if (accounts.length > 0) {
+          web3 = new Web3(window.ethereum);
+          userAccount = accounts[0];
+          contract = new web3.eth.Contract(abi, contractAddress);
+          showConnectedState();
+        }
       }
     });
   </script>
