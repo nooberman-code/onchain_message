@@ -1,39 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DApp - OnChain Chat</title>
-    <!-- CSS faylni ulash -->
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>DApp - OnChain Chat</h1>
-            <div id="network-selector">
-                <button id="network-button">Select Network</button>
+<footer>
+            <textarea id="message-input" placeholder="Type your message..."></textarea>
+            <div>
+                <button id="send-button" class="send-button">Send Message</button>
+                <button id="tip-button" class="tip-button">Tip</button>
             </div>
-        </header>
-
-        <section id="messages-container">
-            <div class="message">
-                <p class="user">User 1:</p>
-                <p class="text">Hello, World!</p>
-            </div>
-            <div class="message">
-                <p class="user">User 2:</p>
-                <p class="text">This is an on-chain chat DApp!</p>
-            </div>
-        </section>
-
-        <footer>
-            <textarea id="message-input" placeholder="Write your message..."></textarea>
-            <button id="send-button">Send Message</button>
         </footer>
+
+        <div id="notification" class="notification">
+            Tip sent successfully!
+        </div>
     </div>
 
-    <!-- JS faylni ulash -->
-    <script src="app.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const sendButton = document.getElementById("send-button");
+            const tipButton = document.getElementById("tip-button");
+            const messageInput = document.getElementById("message-input");
+            const messagesContainer = document.getElementById("messages-container");
+            const notification = document.getElementById("notification");
+            const networkButton = document.getElementById("network-button");
+
+            sendButton.addEventListener("click", function() {
+                const messageText = messageInput.value.trim();
+
+                if (messageText !== "") {
+                    const messageDiv = document.createElement("div");
+                    messageDiv.classList.add("message");
+
+                    const userPara = document.createElement("p");
+                    userPara.classList.add("user");
+                    userPara.textContent = "You:";
+
+                    const textPara = document.createElement("p");
+                    textPara.classList.add("text");
+                    textPara.textContent = messageText;
+
+                    messageDiv.appendChild(userPara);
+                    messageDiv.appendChild(textPara);
+
+                    messagesContainer.appendChild(messageDiv);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                    messageInput.value = "";
+                }
+            });
+
+            tipButton.addEventListener("click", function() {
+                notification.style.display = "block";
+                setTimeout(function() {
+                    notification.style.display = "none";
+                }, 3000);
+            });
+
+            networkButton.addEventListener("click", function() {
+                alert("Select a blockchain network for sending tips.");
+            });
+        });
+    </script>
 </body>
 </html>
